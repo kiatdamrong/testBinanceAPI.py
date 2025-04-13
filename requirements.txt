@@ -1,5 +1,5 @@
-TA-Lib
-streamlit
-ccxt
-pandas
-plotly
+streamlit==1.27.2
+ccxt==4.1.94
+pandas==2.1.1
+plotly==5.18.0
+TA-Lib==0.4.28
