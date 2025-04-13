@@ -3,6 +3,8 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+# ตรวจสอบว่า pandas_ta ถูกติดตั้ง
 try:
     import pandas_ta as ta
 except ImportError:
@@ -10,30 +12,35 @@ except ImportError:
     st.stop()
 
 # สร้าง UI ด้วย Streamlit
-st.title("Trading Analysis Dashboard")
+st.title("Trading Analysis Dashboard - Binance TH")
 
 # ฟังก์ชันให้ผู้ใช้กรอก API Key และ Secret Key
-st.subheader("กรุณากรอกข้อมูล API")
+st.subheader("กรุณากรอกข้อมูล API (Binance TH)")
 api_key = st.text_input("API Key", type="password")
 api_secret = st.text_input("Secret Key", type="password")
 
 # ตรวจสอบว่าผู้ใช้กรอก API Key และ Secret Key หรือไม่
 if api_key and api_secret:
     try:
+        # เชื่อมต่อกับ Binance TH API
         exchange = ccxt.binance({
             'apiKey': api_key,
             'secret': api_secret,
             'urls': {
-                'api': 'https://api.binance.th'  # ใช้ Binance TH API
+                'api': 'https://api.binance.th'  # Binance TH API endpoint
             },
             'options': {'adjustForTimeDifference': True},
         })
+
+        # ทดสอบการเชื่อมต่อด้วยการดึงข้อมูลพื้นฐาน
+        exchange.load_markets()
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาดในการเชื่อมต่อ API: {str(e)}")
         st.stop()
 
     def fetch_and_calculate(symbol, timeframe):
         try:
+            # ดึงข้อมูล OHLCV จาก Binance TH
             ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=100)
             df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
