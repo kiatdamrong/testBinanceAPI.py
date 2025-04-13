@@ -22,6 +22,10 @@ api_secret = st.text_input("Secret Key", type="password")
 # ตรวจสอบว่าผู้ใช้กรอก API Key และ Secret Key หรือไม่
 if api_key and api_secret:
     try:
+        # ล้างช่องว่างใน API Key และ Secret Key
+        api_key = api_key.strip()
+        api_secret = api_secret.strip()
+
         # เชื่อมต่อกับ Binance TH API
         exchange = ccxt.binance({
             'apiKey': api_key,
@@ -39,9 +43,8 @@ if api_key and api_secret:
             }
         })
 
-        # ไม่เรียก load_markets() เพื่อหลีกเลี่ยงการเรียก SAPI
-        # ทดสอบการเชื่อมต่อด้วย ping หรือ endpoint ง่าย ๆ
-        exchange.fetch_ticker('BTC/USDT')  # ทดสอบด้วย ticker
+        # ทดสอบการเชื่อมต่อด้วยการดึง ticker
+        exchange.fetch_ticker('BTC/USDT')
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาดในการเชื่อมต่อ API: {str(e)}")
         st.stop()
