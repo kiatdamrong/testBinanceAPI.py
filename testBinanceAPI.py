@@ -26,11 +26,11 @@ if api_key and api_secret:
         exchange = ccxt.binance({
             'apiKey': api_key,
             'secret': api_secret,
-            'enableRateLimit': True,  # จำกัดอัตราการเรียก API เพื่อป้องกันการถูกบล็อก
+            'enableRateLimit': True,  # จำกัดอัตราการเรียก API
             'urls': {
                 'api': {
                     'public': 'https://api.binance.th/api/v3',  # Market Data endpoint
-                    'private': 'https://api.binance.th/api/v3'  # Private endpoint (ถ้าต้องการ)
+                    'private': 'https://api.binance.th/api/v3'  # Private endpoint
                 }
             },
             'options': {
@@ -39,8 +39,9 @@ if api_key and api_secret:
             }
         })
 
-        # ทดสอบการเชื่อมต่อด้วยการดึง markets
-        exchange.load_markets()
+        # ไม่เรียก load_markets() เพื่อหลีกเลี่ยงการเรียก SAPI
+        # ทดสอบการเชื่อมต่อด้วย ping หรือ endpoint ง่าย ๆ
+        exchange.fetch_ticker('BTC/USDT')  # ทดสอบด้วย ticker
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาดในการเชื่อมต่อ API: {str(e)}")
         st.stop()
