@@ -3,12 +3,10 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
-# ตรวจสอบว่า pandas_ta ถูกติดตั้ง
 try:
     import pandas_ta as ta
 except ImportError:
-    st.error("ไม่พบโมดูล pandas_ta กรุณาตรวจสอบ requirements.txt และติดตั้งด้วย: pip install pandas_ta")
+    st.error("ไม่พบโมดูล pandas_ta กรุณาติดตั้งด้วย: pip install pandas_ta")
     st.stop()
 
 # สร้าง UI ด้วย Streamlit
@@ -25,6 +23,9 @@ if api_key and api_secret:
         exchange = ccxt.binance({
             'apiKey': api_key,
             'secret': api_secret,
+            'urls': {
+                'api': 'https://api.binance.th'  # ใช้ Binance TH API
+            },
             'options': {'adjustForTimeDifference': True},
         })
     except Exception as e:
