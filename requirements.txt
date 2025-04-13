@@ -1,3 +1,5 @@
-ccxt
 TA-Lib
 streamlit
+ccxt
+pandas
+plotly
