@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import pandas-ta as ta
+import pandas_ta as ta
 
 # สร้าง UI ด้วย Streamlit
 st.title("Trading Analysis Dashboard")
