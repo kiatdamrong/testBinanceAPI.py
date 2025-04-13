@@ -26,13 +26,20 @@ if api_key and api_secret:
         exchange = ccxt.binance({
             'apiKey': api_key,
             'secret': api_secret,
+            'enableRateLimit': True,  # จำกัดอัตราการเรียก API เพื่อป้องกันการถูกบล็อก
             'urls': {
-                'api': 'https://api.binance.th'  # Binance TH API endpoint
+                'api': {
+                    'public': 'https://api.binance.th/api/v3',  # Market Data endpoint
+                    'private': 'https://api.binance.th/api/v3'  # Private endpoint (ถ้าต้องการ)
+                }
             },
-            'options': {'adjustForTimeDifference': True},
+            'options': {
+                'adjustForTimeDifference': True,
+                'defaultType': 'spot'  # ใช้ Spot trading
+            }
         })
 
-        # ทดสอบการเชื่อมต่อด้วยการดึงข้อมูลพื้นฐาน
+        # ทดสอบการเชื่อมต่อด้วยการดึง markets
         exchange.load_markets()
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาดในการเชื่อมต่อ API: {str(e)}")
