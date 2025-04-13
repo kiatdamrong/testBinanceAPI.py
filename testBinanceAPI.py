@@ -3,7 +3,13 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import pandas_ta as ta
+
+# ตรวจสอบว่า pandas_ta ถูกติดตั้ง
+try:
+    import pandas_ta as ta
+except ImportError:
+    st.error("ไม่พบโมดูล pandas_ta กรุณาตรวจสอบ requirements.txt และติดตั้งด้วย: pip install pandas_ta")
+    st.stop()
 
 # สร้าง UI ด้วย Streamlit
 st.title("Trading Analysis Dashboard")
