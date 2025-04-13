@@ -1,2 +1,4 @@
 ccxt
+TA-Lib
+pandas
 streamlit
