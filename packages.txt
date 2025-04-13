@@ -1,1 +1,1 @@
-ccxt, pandas, plotly, pandas_ta
+ccxt, pandas, plotly, pandas-ta
