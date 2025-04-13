@@ -1,9 +1,9 @@
 import ccxt
 import pandas as pd
-import talib
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import pandas_ta as ta
 
 # สร้าง UI ด้วย Streamlit
 st.title("Trading Analysis Dashboard")
@@ -15,32 +15,38 @@ api_secret = st.text_input("Secret Key", type="password")
 
 # ตรวจสอบว่าผู้ใช้กรอก API Key และ Secret Key หรือไม่
 if api_key and api_secret:
-    # เชื่อมต่อกับ Binance โดยใช้ API Key และ Secret Key ที่ผู้ใช้กรอก
-    exchange = ccxt.binance({
-        'apiKey': api_key,
-        'secret': api_secret,
-        'options': {'adjustForTimeDifference': True},
-    })
+    try:
+        exchange = ccxt.binance({
+            'apiKey': api_key,
+            'secret': api_secret,
+            'options': {'adjustForTimeDifference': True},
+        })
+    except Exception as e:
+        st.error(f"เกิดข้อผิดพลาดในการเชื่อมต่อ API: {str(e)}")
+        st.stop()
 
-    # ฟังก์ชันดึงข้อมูลและคำนวณอินดิเคเตอร์
     def fetch_and_calculate(symbol, timeframe):
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=100)
-        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        
-        # คำนวณ RSI
-        df['RSI'] = talib.RSI(df['close'], timeperiod=14)
-        
-        # คำนวณ MACD
-        macd, signal, hist = talib.MACD(df['close'], fastperiod=12, slowperiod=26, signalperiod=9)
-        df['MACD'] = macd
-        df['MACD_signal'] = signal
-        df['MACD_hist'] = hist
-        
-        # คำนวณ SMA 50
-        df['SMA50'] = talib.SMA(df['close'], timeperiod=50)
-        
-        return df
+        try:
+            ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=100)
+            df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            
+            # คำนวณ RSI
+            df['RSI'] = ta.rsi(df['close'], length=14)
+            
+            # คำนวณ MACD
+            macd = ta.macd(df['close'], fast=12, slow=26, signal=9)
+            df['MACD'] = macd['MACD_12_26_9']
+            df['MACD_signal'] = macd['MACDS_12_26_9']
+            df['MACD_hist'] = macd['MACDH_12_26_9']
+            
+            # คำนวณ SMA 50
+            df['SMA50'] = ta.sma(df['close'], length=50)
+            
+            return df
+        except Exception as e:
+            st.error(f"เกิดข้อผิดพลาดในการดึงข้อมูล: {str(e)}")
+            return None
 
     # เลือกสัญลักษณ์
     symbols = ['BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'XRP/USDT', 'LTC/USDT']
@@ -52,45 +58,46 @@ if api_key and api_secret:
 
     # ดึงข้อมูลและคำนวณ
     df = fetch_and_calculate(symbol, timeframe)
+    
+    if df is not None:
+        # แสดงข้อมูลล่าสุด
+        st.subheader("ข้อมูลล่าสุด")
+        st.write(df.tail(1))
 
-    # แสดงข้อมูลล่าสุด
-    st.subheader("ข้อมูลล่าสุด")
-    st.write(df.tail(1))
+        # สร้างกราฟ
+        fig = make_subplots(rows=3, cols=1, shared_xaxes=True, 
+                            vertical_spacing=0.1, subplot_titles=('Candlestick', 'RSI', 'MACD'),
+                            row_heights=[0.5, 0.2, 0.3])
 
-    # สร้างกราฟ
-    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, 
-                        vertical_spacing=0.1, subplot_titles=('Candlestick', 'RSI', 'MACD'),
-                        row_heights=[0.5, 0.2, 0.3])
+        # กราฟแท่งเทียน
+        fig.add_trace(go.Candlestick(x=df['timestamp'],
+                                     open=df['open'], high=df['high'],
+                                     low=df['low'], close=df['close'],
+                                     increasing_line_color='green', decreasing_line_color='red'),
+                      row=1, col=1)
 
-    # กราฟแท่งเทียน
-    fig.add_trace(go.Candlestick(x=df['timestamp'],
-                                 open=df['open'], high=df['high'],
-                                 low=df['low'], close=df['close'],
-                                 increasing_line_color='green', decreasing_line_color='red'),
-                  row=1, col=1)
+        # เพิ่มเส้น SMA50
+        fig.add_trace(go.Scatter(x=df['timestamp'], y=df['SMA50'], name='SMA50', line=dict(color='orange')),
+                      row=1, col=1)
 
-    # เพิ่มเส้น SMA50
-    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['SMA50'], name='SMA50', line=dict(color='orange')),
-                  row=1, col=1)
+        # กราฟ RSI
+        fig.add_trace(go.Scatter(x=df['timestamp'], y=df['RSI'], name='RSI', line=dict(color='blue')),
+                      row=2, col=1)
+        fig.add_hline(y=70, line_dash="dash", line_color="red", row=2, col=1)
+        fig.add_hline(y=30, line_dash="dash", line_color="green", row=2, col=1)
 
-    # กราฟ RSI
-    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['RSI'], name='RSI', line=dict(color='blue')),
-                  row=2, col=1)
-    fig.add_hline(y=70, line_dash="dash", line_color="red", row=2, col=1)
-    fig.add_hline(y=30, line_dash="dash", line_color="green", row=2, col=1)
+        # กราฟ MACD
+        fig.add_trace(go.Scatter(x=df['timestamp'], y=df['MACD'], name='MACD', line=dict(color='blue')),
+                      row=3, col=1)
+        fig.add_trace(go.Scatter(x=df['timestamp'], y=df['MACD_signal'], name='Signal', line=dict(color='orange')),
+                      row=3, col=1)
+        fig.add_trace(go.Bar(x=df['timestamp'], y=df['MACD_hist'], name='Histogram', marker_color='gray'),
+                      row=3, col=1)
 
-    # กราฟ MACD
-    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['MACD'], name='MACD', line=dict(color='blue')),
-                  row=3, col=1)
-    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['MACD_signal'], name='Signal', line=dict(color='orange')),
-                  row=3, col=1)
-    fig.add_trace(go.Bar(x=df['timestamp'], y=df['MACD_hist'], name='Histogram', marker_color='gray'),
-                  row=3, col=1)
+        # อัปเดต layout
+        fig.update_layout(height=800, showlegend=False)
 
-    # อัปเดต layout
-    fig.update_layout(height=800, showlegend=False)
-
-    # แสดงกราฟใน Streamlit
-    st.plotly_chart(fig)
+        # แสดงกราฟใน Streamlit
+        st.plotly_chart(fig)
 else:
     st.warning("กรุณากรอก API Key และ Secret Key เพื่อดำเนินการต่อ")
