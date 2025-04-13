@@ -1,4 +1,5 @@
 ccxt
 TA-Lib
+talib
 pandas
 streamlit
